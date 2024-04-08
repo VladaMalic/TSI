@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from tkinter import filedialog
-from tkinter.scrolledtext import ScrolledText
 
 def generate_permuted_alphabet(keyword):
     seen = set()
@@ -34,10 +33,8 @@ def add_file_contents_to_input():
     if file_path:
         with open(file_path, 'r') as file:
             data = file.read()
-            text_entry.delete(0, tk.END)
+            text_entry.delete(1.0, tk.END)
             text_entry.insert(tk.END, data)
-
-
 
 def save_output_to_file():
     file_path = filedialog.asksaveasfilename(defaultextension=".txt")
@@ -47,7 +44,7 @@ def save_output_to_file():
 
 def execute():
     mode = operation_var.get().lower()
-    text = text_entry.get()
+    text = text_entry.get("1.0", tk.END).strip()
     key1 = key1_entry.get()
 
     if not key1.isdigit() or not 1 <= int(key1) <= 25:
@@ -74,7 +71,7 @@ def execute():
         file.write(result)
 
 def reset():
-    text_entry.delete(0, tk.END)
+    text_entry.delete(1.0, tk.END)
     key1_entry.delete(0, tk.END)
     keyword_entry.delete(0, tk.END)
     result_entry.config(state=tk.NORMAL)
@@ -84,7 +81,7 @@ def reset():
 root = tk.Tk()
 root.title("Cifrul Cezar cu două chei")
 root.configure(bg='#ffc0cb')
-root.geometry("700x600")
+root.geometry("700x550")
 
 style = ttk.Style(root)
 style.theme_use('clam')
@@ -95,11 +92,11 @@ style.configure('TEntry', fieldbackground='#ffffff')
 style.configure('TCheckbutton', background='#ffc0cb', foreground='#333333')
 
 tk.Label(root, text="Introduceți cuvântul:", background='#ffc0cb').grid(column=0, row=0, sticky=tk.W, padx=10, pady=5)
-text_entry = ScrolledText(root, width=50, height=10)
-text_entry.grid(column=1, row=0, sticky="ew", padx=10, pady=5)
+text_entry = tk.Text(root, height=5, width=50)
+text_entry.grid(column=1, row=0, sticky=tk.W, padx=10, pady=5)
 
 tk.Label(root, text="Indicați cheia (1-25):", background='#ffc0cb').grid(column=0, row=1, sticky=tk.W, padx=10, pady=5)
-key1_entry = tk.Entry(root, width=70)
+key1_entry = tk.Entry(root, width=66)
 key1_entry.grid(column=1, row=1, sticky=tk.W, padx=10, pady=5)
 
 use_keyword_var = tk.BooleanVar(value=False)
@@ -107,7 +104,7 @@ use_keyword_checkbox = tk.Checkbutton(root, text="Utilizați cuvânt-cheie", var
 use_keyword_checkbox.grid(column=1, row=2, columnspan=2, padx=10, pady=5, sticky=tk.W)
 
 tk.Label(root, text="Introduceți cuvântul-cheie (minim 7 litere):", background='#ffc0cb').grid(column=0, row=3, sticky=tk.W, padx=10, pady=5)
-keyword_entry = tk.Entry(root, width=70, state=tk.DISABLED)
+keyword_entry = tk.Entry(root, width=66, state=tk.DISABLED)
 keyword_entry.grid(column=1, row=3, sticky=tk.W, padx=10, pady=5)
 
 def toggle_keyword_entry():
@@ -125,7 +122,7 @@ reset_button = ttk.Button(root, text="Resetează", command=reset)
 reset_button.grid(column=1, row=4, padx=(5, 10), pady=5, sticky=tk.E)
 
 tk.Label(root, text="Rezultatul:", background='#ffc0cb').grid(column=0, row=5, sticky=tk.W, padx=10, pady=5)
-result_entry = ScrolledText(root, height=10, width=85)
+result_entry = tk.Text(root, height=10, width=83)
 result_entry.grid(column=0, row=6, columnspan=2, sticky=tk.W, padx=10, pady=5)
 
 tk.Label(root, text="Opțiunea dorită:", background='#ffc0cb').grid(column=0, row=7, sticky=tk.W, padx=10, pady=5)
