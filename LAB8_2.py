@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+from tkinter import filedialog
 
 def generate_permuted_alphabet(keyword):
     seen = set()
@@ -13,7 +14,7 @@ def generate_permuted_alphabet(keyword):
 def caesar_cipher_with_keyword(text, key, keyword, mode='encrypt'):
     permuted_alphabet = generate_permuted_alphabet(keyword)
     result = ""
-    text = text.upper().replace(" ", "")
+    text = text.upper()
     for char in text:
         if char in permuted_alphabet:
             original_index = permuted_alphabet.index(char)
@@ -26,6 +27,22 @@ def caesar_cipher_with_keyword(text, key, keyword, mode='encrypt'):
         else:
             result += char
     return result
+
+def add_file_contents_to_input():
+    file_path = filedialog.askopenfilename()
+    if file_path:
+        with open(file_path, 'r') as file:
+            data = file.read()
+            text_entry.delete(0, tk.END)
+            text_entry.insert(tk.END, data)
+
+
+
+def save_output_to_file():
+    file_path = filedialog.asksaveasfilename(defaultextension=".txt")
+    if file_path:
+        with open(file_path, 'w') as file:
+            file.write(result_entry.get("1.0", tk.END))
 
 def execute():
     mode = operation_var.get().lower()
@@ -49,6 +66,11 @@ def execute():
     result_entry.delete(1.0, tk.END)
     result_entry.insert(tk.END, result)
     result_entry.config(state=tk.DISABLED)
+
+    # Salvare în fișier
+    file_extension = "encrypt" if mode == "encrypt" else "decrypt"
+    with open(f"output_{file_extension}.txt", 'w') as file:
+        file.write(result)
 
 def reset():
     text_entry.delete(0, tk.END)
@@ -111,5 +133,11 @@ encrypt_checkbox = tk.Checkbutton(root, text="Encrypt", variable=operation_var, 
 decrypt_checkbox = tk.Checkbutton(root, text="Decrypt", variable=operation_var, onvalue="decrypt", offvalue="", background='#ffc0cb')
 encrypt_checkbox.grid(column=1, row=7, padx=(5, 3), pady=3, sticky=tk.W)
 decrypt_checkbox.grid(column=1, row=7, padx=(3, 5), pady=3, sticky=tk.E)
+
+add_file_button = ttk.Button(root, text="Adăugare din fișier", command=add_file_contents_to_input)
+add_file_button.grid(column=0, row=8, padx=10, pady=5, sticky=tk.W)
+
+save_output_button = ttk.Button(root, text="Salvare în fișier", command=save_output_to_file)
+save_output_button.grid(column=1, row=8, padx=10, pady=5, sticky=tk.W)
 
 root.mainloop()
