@@ -1,0 +1,225 @@
+import tkinter as tk
+from tkinter import ttk
+from tkinter import messagebox
+from tkinter import filedialog
+from collections import Counter
+
+
+def generate_permuted_alphabet(keyword):
+    seen = set()
+    keyword_upper = ''.join([ch for ch in keyword.upper() if not (ch in seen or seen.add(ch))])
+    alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    remaining_alphabet = ''.join([ch for ch in alphabet if ch not in keyword_upper])
+    permuted_alphabet = keyword_upper + remaining_alphabet
+    return permuted_alphabet
+
+
+def caesar_cipher_with_keyword(text, key, keyword, mode='encrypt'):
+    permuted_alphabet = generate_permuted_alphabet(keyword)
+    result = ""
+    text = text.upper()
+    for char in text:
+        if char in permuted_alphabet:
+            original_index = permuted_alphabet.index(char)
+            if mode == 'encrypt':
+                new_index = (original_index + key) % 26
+            else:  # Modul 'decrypt'
+                new_index = (original_index - key) % 26
+            result_char = permuted_alphabet[new_index]
+            result += result_char
+        else:
+            result += char
+    return result
+
+
+def add_file_contents_to_input():
+    file_path = filedialog.askopenfilename()
+    if file_path:
+        with open(file_path, 'r') as file:
+            data = file.read()
+            text_entry.delete(1.0, tk.END)
+            text_entry.insert(tk.END, data)
+
+
+def save_output_to_file():
+    file_path = filedialog.asksaveasfilename(defaultextension=".txt")
+    if file_path:
+        with open(file_path, 'w') as file:
+            file.write(result_entry.get("1.0", tk.END))
+
+
+def execute():
+    mode = operation_var.get().lower()
+    text = text_entry.get("1.0", tk.END).strip()
+    key1 = key1_entry.get()
+
+    if not key1.isdigit():
+        messagebox.showerror("Eroare", "Cheia trebuie să fie un număr întreg.")
+        return
+    else:
+        key1 = int(key1)
+
+    if not (1 <= key1 <= 25):
+        messagebox.showerror("Eroare", "Cheia trebuie să fie un număr între 1 și 25.")
+        return
+
+    if use_keyword_var.get():
+        keyword = keyword_entry.get()
+        if not keyword.isalpha() or len(keyword) < 7:
+            messagebox.showerror("Eroare",
+                                 "Cuvântul-cheie trebuie să conțină doar litere și să aibă o lungime de cel puțin 7 caractere.")
+            return
+        result = caesar_cipher_with_keyword(text, key1, keyword, mode)
+    else:
+        result = caesar_cipher_with_keyword(text, key1, "", mode)
+
+    result_entry.config(state=tk.NORMAL)
+    result_entry.delete(1.0, tk.END)
+    result_entry.insert(tk.END, result)
+    result_entry.config(state=tk.DISABLED)
+
+    # Salvare în fișier
+    file_extension = "encrypt" if mode == "encrypt" else "decrypt"
+    with open(f"output_{file_extension}.txt", 'w') as file:
+        file.write(result)
+
+
+def reset():
+    text_entry.delete(1.0, tk.END)
+    key1_entry.delete(0, tk.END)
+    keyword_entry.delete(0, tk.END)
+    result_entry.config(state=tk.NORMAL)
+    result_entry.delete(1.0, tk.END)
+    result_entry.config(state=tk.DISABLED)
+
+
+
+def show_tables():
+
+    # Crearea unei noi ferestre pentru afișarea tabelelor
+    table_window = tk.Toplevel()
+    table_window.title("Tabele")
+    table_window.geometry("600x400")
+
+    def generate_permuted_alphabet(key):
+        alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        key = int(key)  # Convertiți cheia într-un număr întreg
+        permuted_alphabet = alphabet[key:] + alphabet[:key]
+        return permuted_alphabet
+
+    # Tabelul pentru alfabetul original și permutat
+    tk.Label(table_window, text="Alfabet original și permutat", font=("Helvetica", 12, "bold")).pack()
+    alphabet_tree = ttk.Treeview(table_window, columns=("Original", "Permutat"), show="headings")
+    alphabet_tree.heading("Original", text="Original")
+    alphabet_tree.heading("Permutat", text="Permutat")
+    key = key1_entry.get()
+    original_alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    permuted_alphabet = generate_permuted_alphabet(key)
+    for original_char, permuted_char in zip(original_alphabet, permuted_alphabet):
+        alphabet_tree.insert("", "end", values=(original_char, permuted_char))
+
+    alphabet_tree.pack()
+
+
+    # Tabelul pentru frecvența literelor în textul introdus
+    tk.Label(table_window, text="Frecvența literelor în text", font=("Helvetica", 12, "bold")).pack()
+    frequency_tree = ttk.Treeview(table_window, columns=("Literă", "Frecvență (%)", "Frecvență (Număr)"),
+                                  show="headings")
+    frequency_tree.heading("Literă", text="Literă")
+    frequency_tree.heading("Frecvență (%)", text="Frecvență (%)")
+    frequency_tree.heading("Frecvență (Număr)", text="Frecvență (Număr)")
+
+    text = text_entry.get("1.0", tk.END).strip().upper()
+    letter_counts = Counter(c for c in text if c.isalpha())
+    total_letters = sum(letter_counts.values())
+    frequencies = {char: count / total_letters * 100 for char, count in letter_counts.items()}
+    for char in original_alphabet:
+        freq_percentage = frequencies.get(char, 0)
+        freq_number = letter_counts.get(char, 0)
+        frequency_tree.insert("", "end", values=(char, f"{freq_percentage:.2f}", freq_number))
+
+    frequency_tree.pack()
+
+    root = tk.Tk()
+    root.title("Cifrul Cezar cu două chei")
+    root.configure(bg='#ffc0cb')
+    root.geometry("700x550")
+
+
+    show_tables_button = ttk.Button(root, text="Afișare Tabele", command=show_tables)
+    show_tables_button.grid(column=0, row=9, columnspan=2, padx=10, pady=5, sticky=tk.W)
+
+    root.mainloop()
+
+
+root = tk.Tk()
+root.title("Cifrul Cezar cu două chei")
+root.configure(bg='#ffc0cb')
+root.geometry("700x550")
+
+style = ttk.Style(root)
+style.theme_use('clam')
+style.configure('TButton', foreground='#ffffff', background='#ff69b4', borderwidth=2)
+style.map('TButton', background=[('active', '#ff1493')])
+style.configure('TLabel', foreground='#333333', background='#ffc0cb')
+style.configure('TEntry', fieldbackground='#ffffff')
+style.configure('TCheckbutton', background='#ffc0cb', foreground='#333333')
+
+tk.Label(root, text="Introduceți cuvântul:", background='#ffc0cb').grid(column=0, row=0, sticky=tk.W, padx=10, pady=5)
+text_entry = tk.Text(root, height=5, width=50)
+text_entry.grid(column=1, row=0, sticky=tk.W, padx=10, pady=5)
+
+tk.Label(root, text="Indicați cheia (1-25):", background='#ffc0cb').grid(column=0, row=1, sticky=tk.W, padx=10, pady=5)
+key1_entry = tk.Entry(root, width=66)
+key1_entry.grid(column=1, row=1, sticky=tk.W, padx=10, pady=5)
+
+use_keyword_var = tk.BooleanVar(value=False)
+use_keyword_checkbox = tk.Checkbutton(root, text="Utilizați cuvânt-cheie", variable=use_keyword_var, onvalue=True,
+                                      offvalue=False, background='#ffc0cb')
+use_keyword_checkbox.grid(column=1, row=2, columnspan=2, padx=10, pady=5, sticky=tk.W)
+
+tk.Label(root, text="Introduceți cuvântul-cheie (minim 7 litere):", background='#ffc0cb').grid(column=0, row=3,
+                                                                                               sticky=tk.W, padx=10,
+                                                                                               pady=5)
+keyword_entry = tk.Entry(root, width=66, state=tk.DISABLED)
+keyword_entry.grid(column=1, row=3, sticky=tk.W, padx=10, pady=5)
+
+
+def toggle_keyword_entry():
+    if use_keyword_var.get():
+        keyword_entry.config(state=tk.NORMAL)
+    else:
+        keyword_entry.config(state=tk.DISABLED)
+
+
+use_keyword_checkbox.config(command=toggle_keyword_entry)
+
+execute_button = ttk.Button(root, text="Execută", command=execute)
+execute_button.grid(column=1, row=4, padx=(10, 5), pady=5, sticky=tk.W)
+
+reset_button = ttk.Button(root, text="Resetează", command=reset)
+reset_button.grid(column=1, row=4, padx=(5, 10), pady=5, sticky=tk.E)
+
+tk.Label(root, text="Rezultatul:", background='#ffc0cb').grid(column=0, row=5, sticky=tk.W, padx=10, pady=5)
+result_entry = tk.Text(root, height=10, width=83)
+result_entry.grid(column=0, row=6, columnspan=2, sticky=tk.W, padx=10, pady=5)
+
+tk.Label(root, text="Opțiunea dorită:", background='#ffc0cb').grid(column=0, row=7, sticky=tk.W, padx=10, pady=5)
+operation_var = tk.StringVar()
+encrypt_checkbox = tk.Checkbutton(root, text="Encrypt", variable=operation_var, onvalue="encrypt", offvalue="",
+                                  background='#ffc0cb')
+decrypt_checkbox = tk.Checkbutton(root, text="Decrypt", variable=operation_var, onvalue="decrypt", offvalue="",
+                                  background='#ffc0cb')
+encrypt_checkbox.grid(column=1, row=7, padx=(5, 3), pady=3, sticky=tk.W)
+decrypt_checkbox.grid(column=1, row=7, padx=(3, 5), pady=3, sticky=tk.E)
+
+add_file_button = ttk.Button(root, text="Adăugare din fișier", command=add_file_contents_to_input)
+add_file_button.grid(column=0, row=8, padx=10, pady=5, sticky=tk.W)
+
+save_output_button = ttk.Button(root, text="Salvare în fișier", command=save_output_to_file)
+save_output_button.grid(column=1, row=8, padx=10, pady=5, sticky=tk.W)
+
+show_tables_button = ttk.Button(root, text="Afișare Tabele", command=show_tables)
+show_tables_button.grid(column=0, row=9, columnspan=2, padx=10, pady=5, sticky=tk.W)
+
+root.mainloop()
