@@ -1,0 +1,209 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+from tkinter import filedialog
+from collections import Counter
+
+STATIC_KEYWORD = "TSIAPRIL"
+result_entry = None  # Inițializăm result_entry în afara funcției show_results()
+
+
+def generate_permuted_alphabet(keyword):
+    seen = set()
+    keyword_upper = ''.join([ch for ch in keyword.upper() if not (ch in seen or seen.add(ch))])
+    alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    remaining_alphabet = ''.join([ch for ch in alphabet if ch not in keyword_upper])
+    permuted_alphabet = keyword_upper + remaining_alphabet
+    return permuted_alphabet
+
+
+def caesar_cipher_with_keyword(text, key, keyword, mode='encrypt'):
+    permuted_alphabet = generate_permuted_alphabet(keyword)
+    result = ""
+    text = text.upper()
+    for char in text:
+        if char in permuted_alphabet:
+            original_index = permuted_alphabet.index(char)
+            if mode == 'encrypt':
+                new_index = (original_index + key) % 26
+            else:
+                new_index = (original_index - key) % 26
+            result_char = permuted_alphabet[new_index]
+            result += result_char
+        else:
+            result += char
+    return result
+
+
+def calculate_letter_frequency(text):
+    text = ''.join(filter(str.isalpha, text.upper()))
+    letter_count = Counter(text)
+    total_letters = sum(letter_count.values())
+    frequency = {letter: (count, count / total_letters * 100) for letter, count in letter_count.items()}
+    return frequency
+
+
+def show_letter_frequency():
+    text = text_entry.get("1.0", tk.END).strip()
+    frequency = calculate_letter_frequency(text)
+    results_window = tk.Toplevel(root)
+    results_window.title("Frecvența Literelor")
+    results_window.geometry("300x400")
+    result_text = tk.Text(results_window)
+    result_text.pack(fill="both", expand=True, padx=10, pady=10)
+    for letter, (count, percentage) in frequency.items():
+        result_text.insert(tk.END, f"{letter}: {count} ({percentage:.2f}%)\n")
+
+
+def show_results():
+    results_window = tk.Toplevel(root)
+    results_window.title("Rezultate Criptare/Decriptare")
+    results_window.geometry("900x700")
+    main_frame = ttk.LabelFrame(results_window, text="Rezultate")
+    main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+    text = text_entry.get("1.0", tk.END).strip()
+    mode = "encrypt" if mode_var.get() == 1 else "decrypt"
+
+    if key_var.get():
+        for key in range(5, 16):
+            if mode == "encrypt":
+                result = caesar_cipher_with_keyword(text, key, STATIC_KEYWORD)
+            elif mode == "decrypt":
+                result = caesar_cipher_with_keyword(text, key, STATIC_KEYWORD, mode='decrypt')
+            file_extension = f"_key{key}_{'encrypt' if mode == 'encrypt' else 'decrypt'}.txt"
+            with open(f"output{file_extension}", 'w') as file:
+                file.write(result)
+    else:
+        for key in range(5, 16):
+            if mode == "encrypt":
+                result = caesar_cipher_with_keyword(text, key, "")
+            elif mode == "decrypt":
+                result = caesar_cipher_with_keyword(text, key, "", mode='decrypt')
+            file_extension = f"_key{key}_{'encrypt' if mode == 'encrypt' else 'decrypt'}.txt"
+            with open(f"output{file_extension}", 'w') as file:
+                file.write(result)
+
+    # Afisarea rezultatelor in fereastra
+    result_entry = tk.Text(main_frame)
+    result_entry.pack(side="left", fill="both", expand=True, padx=5, pady=5)
+    result_entry.config(state=tk.NORMAL)  # Activăm câmpul de text pentru scriere
+
+    if key_var.get():
+        for key in range(5, 16):
+            if mode == "encrypt":
+                result = caesar_cipher_with_keyword(text, key, STATIC_KEYWORD)
+            elif mode == "decrypt":
+                result = caesar_cipher_with_keyword(text, key, STATIC_KEYWORD, mode='decrypt')
+
+            result_entry.tag_configure("bold", font=("Helvetica", 10, "bold"))
+            result_entry.insert(tk.END, f"Rezultate pentru Cheia {key}:\n", 'bold')
+            result_entry.insert(tk.END, f"{result}\n\n")
+    else:
+        for key in range(5, 16):
+            if mode == "encrypt":
+                result = caesar_cipher_with_keyword(text, key, "")
+            elif mode == "decrypt":
+                result = caesar_cipher_with_keyword(text, key, "", mode='decrypt')
+
+            result_entry.tag_configure("bold", font=("Helvetica", 10, "bold"))
+            result_entry.insert(tk.END, f"Rezultate pentru Cheia {key}:\n", 'bold')
+            result_entry.insert(tk.END, f"{result}\n\n")
+
+    result_entry.config(state=tk.DISABLED)  # Dezactivăm câmpul de text
+
+
+
+def reset():
+    text_entry.delete(1.0, tk.END)
+    keyword_entry.delete(0, tk.END)
+    result_entry.config(state=tk.NORMAL)
+    result_entry.delete(1.0, tk.END)
+    result_entry.config(state=tk.DISABLED)
+
+
+def toggle_keyword_entry_state():
+    if key_var.get():
+        keyword_entry.config(state="normal")
+    else:
+        keyword_entry.config(state="disabled")
+
+
+def add_file_contents_to_input():
+    file_path = filedialog.askopenfilename()
+    if file_path:
+        with open(file_path, 'r') as file:
+            data = file.read()
+            text_entry.delete(1.0, tk.END)
+            text_entry.insert(tk.END, data)
+
+
+def save_output_to_file():
+    if not result_entry:
+        messagebox.showwarning("Avertizare", "Nu există rezultate de salvat.")
+        return
+
+    results_window = tk.Toplevel(root)
+    results_window.title("Rezultate Salvate")
+    results_window.geometry("500x500")
+
+    result_text = tk.Text(results_window)
+    result_text.pack(fill="both", expand=True, padx=10, pady=10)
+    result_text.insert(tk.END, result_entry.get("1.0", tk.END))
+
+    file_path = filedialog.asksaveasfilename(defaultextension=".txt")
+    if file_path:
+        with open(file_path, 'w') as file:
+            file.write(result_entry.get("1.0", tk.END))
+
+
+root = tk.Tk()
+root.title("Cifrul Cezar cu două chei")
+root.configure(bg='#ffc0cb')
+
+style = ttk.Style()
+style.theme_use('clam')
+style.configure('TButton', foreground='#ffffff', background='#ff69b4', borderwidth=2)
+style.map('TButton', background=[('active', '#ff1493')])
+style.configure('My.TButton', foreground='#ffffff', background='#ff69b4', borderwidth=2)
+style.map('My.TButton', background=[('active', '#ff1493')])
+style.configure('My.TLabel', foreground='#333333', background='#ffc0cb')
+
+tk.Label(root, text="Introduceți cuvântul:", background='#ffc0cb').grid(column=0, row=0, sticky=tk.W, padx=10, pady=5)
+text_entry = tk.Text(root, height=5, width=50)
+text_entry.grid(column=1, row=0, sticky=tk.W, padx=10, pady=5)
+
+tk.Label(root, text="Cuvânt cheie pentru Cifrul Cezar fortificat:", background='#ffc0cb',
+         font=('Helvetica', 10, 'bold')).grid(column=0, row=1,
+                                              sticky=tk.W, padx=10,
+                                              pady=5)
+keyword_entry = tk.Entry(root, state="normal")
+keyword_entry.grid(column=1, row=1, sticky=tk.W, padx=10, pady=5)
+keyword_entry.insert(0, STATIC_KEYWORD)
+
+mode_var = tk.IntVar()
+mode_var.set(1)
+encrypt_radio = ttk.Radiobutton(root, text="Criptare", variable=mode_var, value=1, style="My.TRadiobutton")
+encrypt_radio.grid(column=0, row=2, padx=10, pady=5)
+decrypt_radio = ttk.Radiobutton(root, text="Decriptare", variable=mode_var, value=2, style="My.TRadiobutton")
+decrypt_radio.grid(column=1, row=2, padx=10, pady=5)
+
+key_var = tk.IntVar()
+key_checkbox = tk.Checkbutton(root, text="Criptare cu două chei", variable=key_var, command=toggle_keyword_entry_state)
+key_checkbox.grid(column=0, row=3, columnspan=2, padx=10, pady=5)
+
+show_results_button = ttk.Button(root, text="Afișare Rezultate", command=show_results)
+show_results_button.grid(column=1, row=7, padx=10, pady=5)
+
+show_frequency_button = ttk.Button(root, text="Afișare Frecvență", command=show_letter_frequency)
+show_frequency_button.grid(column=0, row=7, padx=10, pady=5)
+
+add_file_button = ttk.Button(root, text="Adăugare din fișier", command=add_file_contents_to_input)
+add_file_button.grid(column=0, row=8, padx=10, pady=5, sticky=tk.W)
+
+save_output_button = ttk.Button(root, text="Salvare în fișier", command=save_output_to_file)
+save_output_button.grid(column=1, row=8, padx=10, pady=5)
+
+reset_button = ttk.Button(root, text="Resetează", command=reset)
+reset_button.grid(column=1, row=4, padx=(5, 10), pady=5, sticky=tk.E)
+
+root.mainloop()
