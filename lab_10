@@ -1,0 +1,136 @@
+import tkinter as tk
+from tkinter import messagebox
+from tkinter import ttk
+
+# Alfabetul românesc, inclusiv literele suplimentare
+alfabet = "AĂÂBCDEFGHIÎJKLMNOPQRSȘTȚUVWXYZ"
+
+def validate_key(input):
+    # Verificăm dacă inputul este un număr între 5 și 15 sau un șir de caractere care nu conține caractere speciale
+    if input.isdigit():
+        key_length = int(input)
+        if 5 <= key_length <= 15:
+            return True
+    elif input.isalnum() and not any(char.isdigit() for char in input):
+        return True
+    messagebox.showerror("Eroare", "Cheia trebuie să fie un număr între 5 și 15 sau un șir de caractere fără caractere speciale!")
+    return False
+
+# Algoritmul de criptare Vigenere pentru limba română
+def encrypt_vigenere(text, cheie):
+    text = text.upper()
+    cheie = cheie.upper()
+    text_criptat = ""
+    for i in range(len(text)):
+        if text[i].isalpha():
+            pi = alfabet.index(text[i])
+            # Verificăm dacă cheia este numerică sau șir de caractere și calculăm indexul corespunzător
+            if cheie.isdigit():
+                ki = int(cheie) % len(alfabet)
+            else:
+                ki = alfabet.index(cheie[i % len(cheie)])
+            ci = (pi + ki) % len(alfabet)
+            text_criptat += alfabet[ci]
+        else:
+            text_criptat += text[i]
+    return text_criptat
+
+def calculate_frequency(input_text):
+    freq = {}
+    total = 0
+    for char in input_text:
+        if char.isalpha():
+            char = char.upper()
+            if char in alfabet:
+                total += 1
+                if char in freq:
+                    freq[char] += 1
+                else:
+                    freq[char] = 1
+    freq_percentage = {char: (count / total * 100) for char, count in freq.items()}
+    return freq, freq_percentage
+
+def show_frequency():
+    input_text = plaintext_entry.get("1.0", tk.END).strip()
+    freq, freq_percentage = calculate_frequency(input_text)
+    result = "Frecvența literelor:\n\n"
+    for char, count in freq.items():
+        result += f"{char}: {count} ({freq_percentage[char]:.2f}%)\n"
+    result_text.delete(1.0, tk.END)
+    result_text.insert(tk.END, result)
+
+# Algoritmul de decriptare Vigenere pentru limba română
+def decrypt_vigenere(text_criptat, cheie):
+    text_criptat = text_criptat.upper()
+    cheie = cheie.upper()
+    text_decriptat = ""
+    for i in range(len(text_criptat)):
+        if text_criptat[i].isalpha():
+            ci = alfabet.index(text_criptat[i])
+            # Verificăm dacă cheia este numerică sau șir de caractere și calculăm indexul corespunzător
+            if cheie.isdigit():
+                ki = int(cheie) % len(alfabet)
+            else:
+                ki = alfabet.index(cheie[i % len(cheie)])
+            pi = (ci - ki) % len(alfabet)
+            text_decriptat += alfabet[pi]
+        else:
+            text_decriptat += text_criptat[i]
+    return text_decriptat
+
+# Functia pentru criptarea/decriptarea textului
+def calculate():
+    # Verificăm cheia numai atunci când apăsăm butonul de calculare
+    if validate_key(key.get()):
+        if var.get() == 0:
+            result_text.delete(1.0, tk.END)
+            result_text.insert(tk.END, encrypt_vigenere(plaintext_entry.get("1.0", tk.END).strip(), key.get()))
+        else:
+            result_text.delete(1.0, tk.END)
+            result_text.insert(tk.END, decrypt_vigenere(plaintext_entry.get("1.0", tk.END).strip(), key.get()))
+
+
+
+# Crearea interfetei grafice folosind TKinter
+root = tk.Tk()
+root.geometry('850x550')
+root.title('Cifrul Vigenere pentru limba română')
+
+# Setarea culorii de fundal a ferestrei
+root.configure(bg='#f7abcb')
+
+# Variabile
+var = tk.IntVar()
+plaintext_entry = tk.Text(root, width=70, height=10)
+key = tk.StringVar()
+
+# Adaugarea componentelor UI
+tk.Label(root, text='Text:', bg='#f7abcb').grid(row=0, column=0, padx=10, pady=10, sticky="w")
+plaintext_entry.grid(row=0, column=1, padx=10, pady=10)
+
+tk.Label(root, text='Cheie (număr sau text între 5 și 15 caractere):', bg='#f7abcb').grid(row=1, column=0, padx=10, pady=10, sticky="w")
+key_entry = tk.Entry(root, textvariable=key, width=93)
+key_entry.grid(row=1, column=1, padx=10, pady=10)
+
+tk.Radiobutton(root, text='Criptare', variable=var,
+               value=0, bg='#f7abcb').grid(row=2, column=0, padx=1, pady=10, sticky="w")
+
+tk.Radiobutton(root, text='Decriptare', variable=var,
+               value=1, bg='#f7abcb').grid(row=2, column=1, padx=1, pady=10, sticky="w")
+
+calculate_button = ttk.Button(root, text='Calculare', command=calculate, style='TButton')
+calculate_button.grid(row=3, column=1, columnspan=2, padx=10, pady=10, sticky="w")
+
+frequency_button = ttk.Button(root, text='Frecvență', command=show_frequency, style='TButton')
+frequency_button.grid(row=3, column=0, padx=10, pady=10, sticky="w")
+
+result_text = tk.Text(root, width=70, height=10)
+result_text.grid(row=4, column=1, columnspan=2, padx=10, pady=10)
+
+# Configurare stiluri pentru butoane
+style = ttk.Style()
+style.theme_use('clam')
+style.configure('TButton', foreground='#ffffff', background='#DE3F7A', borderwidth=0)
+style.map('TButton', background=[('active', '#DE3F7A')])
+
+root.mainloop()
