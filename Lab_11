@@ -1,0 +1,151 @@
+import tkinter as tk
+from tkinter import messagebox, filedialog
+import random
+import math
+
+# Funcție pentru generarea unui număr prim
+def generate_prime():
+    while True:
+        num = random.randint(100, 1000)
+        if is_prime(num):
+            return num
+
+# Funcție pentru verificarea dacă un număr este prim
+def is_prime(n):
+    if n <= 1:
+        return False
+    if n <= 3:
+        return True
+    if n % 2 == 0 or n % 3 == 0:
+        return False
+    i = 5
+    while i * i <= n:
+        if n % i == 0 or n % (i + 2) == 0:
+            return False
+        i += 6
+    return True
+
+# Funcție pentru calculul inversului modular folosind algoritmul Euclid extins
+def extended_gcd(a, b):
+    if a == 0:
+        return (b, 0, 1)
+    else:
+        g, y, x = extended_gcd(b % a, a)
+        return (g, x - (b // a) * y, y)
+
+# Funcție pentru generarea cheilor RSA
+def generate_keys():
+    p = generate_prime()
+    q = generate_prime()
+    n = p * q
+    phi = (p - 1) * (q - 1)
+    while True:
+        e = random.randint(2, phi - 1)
+        if math.gcd(e, phi) == 1:
+            break
+    _, d, _ = extended_gcd(e, phi)
+    d = d % phi
+    if d < 0:
+        d += phi
+    return ((e, n), (d, n))
+
+# Funcție pentru criptare
+def encrypt(plaintext, public_key):
+    e, n = public_key
+    ciphertext = [pow(ord(char), e, n) for char in plaintext]
+    return ciphertext
+
+# Funcție pentru decriptare
+def decrypt(ciphertext, private_key):
+    d, n = private_key
+    plaintext = ''.join([chr(pow(char, d, n)) for char in ciphertext])
+    return plaintext
+
+# Funcție pentru criptare/decriptare și afișare rezultat
+def process_text():
+    text = text_entry.get("1.0", "end-1c")
+    if not text:
+        messagebox.showerror("Eroare", "Introduceți text!")
+        return
+    if operation.get() == "Encrypt":
+        result = encrypt(text, public_key)
+    else:
+        try:
+            ciphertext = [int(char) for char in text.split()]
+            result = decrypt(ciphertext, private_key)
+        except ValueError:
+            messagebox.showerror("Eroare", "Textul introdus nu este valid pentru decriptare!")
+            return
+    result_text.delete("1.0", tk.END)
+    result_text.insert(tk.END, result)
+
+def clear_text():
+    text_entry.delete("1.0", tk.END)
+    result_text.delete("1.0", tk.END)
+
+def import_text():
+    file_path = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt"), ("Word Files", "*.docx")])
+    if file_path:
+        with open(file_path, "r") as file:
+            text = file.read()
+            text_entry.delete("1.0", tk.END)
+            text_entry.insert(tk.END, text)
+
+def save_text():
+    text_to_save = result_text.get("1.0", tk.END)
+    file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt")])
+    if file_path:
+        with open(file_path, "w") as file:
+            file.write(text_to_save)
+
+# Generare chei RSA
+public_key, private_key = generate_keys()
+
+# Interfața grafică
+root = tk.Tk()
+root.title("RSA Encryptor/Decryptor")
+root.configure(bg="#f7abcb")
+
+# Eticheta pentru textul de intrare
+label = tk.Label(root, text="Introduceți textul:", bg="#f7abcb")
+label.grid(row=0, column=0, padx=10, pady=(10, 5))
+
+# Zona de text pentru introducerea textului
+text_entry = tk.Text(root, height=10, width=70)
+text_entry.grid(row=0, column=1, padx=10, pady=(10, 5))
+
+# Radio butoane pentru selectarea operației
+operation = tk.StringVar()
+operation.set("Encrypt")  # Setare implicită la "Encrypt"
+
+encrypt_button = tk.Radiobutton(root, text="Encrypt", variable=operation, value="Encrypt", bg="#f7abcb")
+encrypt_button.grid(row=1, column=0, padx=10, pady=5)
+
+decrypt_button = tk.Radiobutton(root, text="Decrypt", variable=operation, value="Decrypt", bg="#f7abcb")
+decrypt_button.grid(row=1, column=1, padx=10, pady=5)
+
+# Butonul de procesare
+process_button = tk.Button(root, text="Afiseaza", command=process_text, width=20, height=2, bg="#DE3F7A", fg="white")
+process_button.grid(row=2, column=0, columnspan=2, padx=10, pady=5)
+
+# Butonul de ștergere a textului
+clear_button = tk.Button(root, text="Șterge textul", command=clear_text, bg="#DE3F7A", fg="white")
+clear_button.grid(row=3, column=0, columnspan=2, padx=10, pady=5)
+
+# Butonul pentru importarea textului din fișier
+import_button = tk.Button(root, text="Importă din fișier", command=import_text, bg="#DE3F7A", fg="white")
+import_button.grid(row=5, column=0, columnspan=2, padx=10, pady=5)
+
+# Butonul pentru salvarea textului în fișier
+save_button = tk.Button(root, text="Salvează în fișier", command=save_text, bg="#DE3F7A", fg="white")
+save_button.grid(row=6, column=0, columnspan=2, padx=10, pady=5)
+
+# Eticheta pentru rezultat
+result_label = tk.Label(root, text="Rezultat:", bg="#f7abcb")
+result_label.grid(row=4, column=0, padx=10, pady=5)
+
+# Zona de afișare a rezultatului
+result_text = tk.Text(root, height=10, width=70)
+result_text.grid(row=4, column=1, padx=10, pady=5)
+
+root.mainloop()
