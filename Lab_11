@@ -98,6 +98,26 @@ def save_text():
         with open(file_path, "w") as file:
             file.write(text_to_save)
 
+# Funcție pentru afișarea cheilor
+def show_keys_window():
+    keys_window = tk.Toplevel(root)
+    keys_window.title("Cheile RSA")
+    keys_window.configure(bg="#f7abcb")
+
+    public_key_label = tk.Label(keys_window, text="Cheia Publică:", bg="#f7abcb")
+    public_key_label.grid(row=0, column=0, padx=10, pady=(10, 5))
+
+    public_key_text = tk.Text(keys_window, height=5, width=35)
+    public_key_text.grid(row=0, column=1, padx=10, pady=(10, 5))
+    public_key_text.insert(tk.END, f"e: {public_key[0]}\nn: {public_key[1]}")
+
+    private_key_label = tk.Label(keys_window, text="Cheia Privată:", bg="#f7abcb")
+    private_key_label.grid(row=1, column=0, padx=10, pady=5)
+
+    private_key_text = tk.Text(keys_window, height=5, width=35)
+    private_key_text.grid(row=1, column=1, padx=10, pady=5)
+    private_key_text.insert(tk.END, f"d: {private_key[0]}\nn: {private_key[1]}")
+
 # Generare chei RSA
 public_key, private_key = generate_keys()
 
@@ -147,5 +167,9 @@ result_label.grid(row=4, column=0, padx=10, pady=5)
 # Zona de afișare a rezultatului
 result_text = tk.Text(root, height=10, width=70)
 result_text.grid(row=4, column=1, padx=10, pady=5)
+
+# Butonul pentru afișarea cheilor
+show_keys_button = tk.Button(root, text="Afișează cheile", command=show_keys_window, bg="#DE3F7A", fg="white")
+show_keys_button.grid(row=9, column=0, columnspan=2, padx=10, pady=5)
 
 root.mainloop()
